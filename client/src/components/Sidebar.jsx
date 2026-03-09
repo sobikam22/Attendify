@@ -19,8 +19,7 @@ const Sidebar = () => {
         student: [
             { to: "/student", icon: LayoutDashboard, label: "Dashboard" },
             { to: "/student/history", icon: FileText, label: "Attendance History" },
-            // Students can view teacher dashboard in read-only mode
-            { to: "/teacher", icon: Users, label: "Class View" }
+            { to: "/student/classes", icon: BookOpen, label: "Class View" }
         ],
         teacher: [
             { to: "/teacher", icon: LayoutDashboard, label: "Dashboard" },

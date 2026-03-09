@@ -5,6 +5,8 @@ Attendify is a robust, role-based attendance management and analysis system buil
 ## 🚀 Features
 
 -   **Role-Based Access Control (RBAC):** Distinct dashboards and functionalities for Admins, Teachers, and Students.
+-   **Teacher Dashboard:** Manage assigned classes, mark student attendance dynamically, and view student risk statuses.
+-   **Student Dashboard:** View real-time attendance KPIs, class-wise attendance progress, and detailed attendance history records.
 -   **Secure Authentication:** JWT-based authentication with secure password hashing.
 -   **Real-time Attendance Tracking:** Efficient marking and retrieval of attendance data.
 -   **Analytics Dashboard:** Visual insights into attendance trends (using Recharts).

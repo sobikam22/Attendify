@@ -40,17 +40,38 @@ function App() {
             </ProtectedRoute>
           } />
 
+
           {/* Teacher Dashboard */}
           <Route path="/teacher" element={
             <ProtectedRoute allowedRoles={['teacher', 'admin', 'student']}>
-              <TeacherDashboard />
+              <TeacherDashboard defaultView="dashboard" />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/classes" element={
+            <ProtectedRoute allowedRoles={['teacher', 'admin', 'student']}>
+              <TeacherDashboard defaultView="classes" />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/students" element={
+            <ProtectedRoute allowedRoles={['teacher', 'admin', 'student']}>
+              <TeacherDashboard defaultView="students" />
             </ProtectedRoute>
           } />
 
           {/* Student Dashboard */}
           <Route path="/student" element={
             <ProtectedRoute allowedRoles={['student']}>
-              <StudentDashboard />
+              <StudentDashboard defaultView="dashboard" />
+            </ProtectedRoute>
+          } />
+          <Route path="/student/history" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentDashboard defaultView="history" />
+            </ProtectedRoute>
+          } />
+          <Route path="/student/classes" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentDashboard defaultView="classes" />
             </ProtectedRoute>
           } />
 

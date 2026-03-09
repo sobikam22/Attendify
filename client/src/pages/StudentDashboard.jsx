@@ -4,17 +4,20 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import DashboardLayout from '../components/DashboardLayout';
-import { Download, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, Calendar, AlertCircle, CheckCircle, BookOpen } from 'lucide-react';
 
-const StudentDashboard = () => {
+const StudentDashboard = ({ defaultView = 'dashboard' }) => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [view, setView] = useState(defaultView);
     const [rawStats, setRawStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filterMonth, setFilterMonth] = useState('All');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
     useEffect(() => {
+        setView(defaultView);
+
         const fetchMyStats = async () => {
             try {
                 const { data } = await api.get('/analytics/student/me');
@@ -26,7 +29,7 @@ const StudentDashboard = () => {
             }
         };
         fetchMyStats();
-    }, []);
+    }, [defaultView]);
 
     const processedData = useMemo(() => {
         if (!rawStats) return null;
@@ -122,189 +125,259 @@ const StudentDashboard = () => {
     return (
         <DashboardLayout>
             {/* Header Section */}
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Student Dashboard</h1>
                     <p className="text-gray-500">Overview of your attendance and performance</p>
                 </div>
-                <div className="flex gap-3">
+
+                <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
                     <button
-                        onClick={downloadReport}
-                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium text-sm"
+                        onClick={() => { setView('dashboard'); navigate('/student'); }}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition ${view === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                     >
-                        <Download className="w-4 h-4" />
-                        Export Report
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => { setView('history'); navigate('/student/history'); }}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition ${view === 'history' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                        Attendance History
+                    </button>
+                    <button
+                        onClick={() => { setView('classes'); navigate('/student/classes'); }}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition ${view === 'classes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                        Class View
                     </button>
                 </div>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {/* Attendance Score */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500">Overall Attendance</p>
-                        <h3 className={`text-3xl font-bold mt-1 ${parseFloat(percentage) < 75 ? 'text-red-500' : 'text-indigo-600'}`}>
-                            {percentage}%
-                        </h3>
-                        <p className="text-xs text-gray-400 mt-1">Target: 75%</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
-                        <CheckCircle className={`w-6 h-6 ${parseFloat(percentage) < 75 ? 'text-red-500' : 'text-indigo-600'}`} />
-                    </div>
-                </div>
-
-                {/* Total Classes */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                            <Calendar className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-500">Total Classes</span>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-800">{total}</div>
-                </div>
-
-                {/* Present */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                            <CheckCircle className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-500">Present</span>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-800">{present}</div>
-                </div>
-
-                {/* Absent */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-red-50 rounded-lg text-red-600">
-                            <AlertCircle className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-500">Absent</span>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-800">{absent}</div>
-                </div>
-            </div>
-
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                {/* Bar Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Subject Attendance</h3>
-                    <div className="h-72 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={subjectData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="subject" tick={{ fontSize: 12 }} />
-                                <YAxis />
-                                <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                <ReferenceLine y={75} stroke="red" strokeDasharray="3 3" label={{ value: '75%', position: 'right', fill: 'red', fontSize: 10 }} />
-                                <Bar dataKey="attendance" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Info Card */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Profile Details</h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                <span className="text-gray-600">Name</span>
-                                <span className="font-semibold text-gray-900">{studentName}</span>
+            {/* VIEW: DASHBOARD (Overview) */}
+            {view === 'dashboard' && (
+                <>
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {/* Attendance Score */}
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500">Overall Attendance</p>
+                                <h3 className={`text-3xl font-bold mt-1 ${parseFloat(percentage) < 75 ? 'text-red-500' : 'text-indigo-600'}`}>
+                                    {percentage}%
+                                </h3>
+                                <p className="text-xs text-gray-400 mt-1">Target: 75%</p>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                <span className="text-gray-600">Roll Number</span>
-                                <span className="font-medium text-gray-700 font-mono text-sm">{rollNumber}</span>
+                            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
+                                <CheckCircle className={`w-6 h-6 ${parseFloat(percentage) < 75 ? 'text-red-500' : 'text-indigo-600'}`} />
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                <span className="text-gray-600">Teacher</span>
-                                <div className="text-right">
-                                    <div className="font-medium text-gray-900">{assignedTeacher?.name || 'N/A'}</div>
-                                    <div className="text-xs text-gray-400">{assignedTeacher?.email}</div>
+                        </div>
+
+                        {/* Total Classes */}
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                    <Calendar className="w-5 h-5" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-500">Total Classes</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-800">{total}</div>
+                        </div>
+
+                        {/* Present */}
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                                    <CheckCircle className="w-5 h-5" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-500">Present</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-800">{present}</div>
+                        </div>
+
+                        {/* Absent */}
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-red-50 rounded-lg text-red-600">
+                                    <AlertCircle className="w-5 h-5" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-500">Absent</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-800">{absent}</div>
+                        </div>
+                    </div>
+
+                    {/* Charts Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Bar Chart */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">Subject Attendance</h3>
+                            <div className="h-72 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={subjectData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                                        <YAxis />
+                                        <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <ReferenceLine y={75} stroke="red" strokeDasharray="3 3" label={{ value: '75%', position: 'right', fill: 'red', fontSize: 10 }} />
+                                        <Bar dataKey="attendance" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Info Card */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Profile Details</h3>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                                        <span className="text-gray-600">Name</span>
+                                        <span className="font-semibold text-gray-900">{studentName}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                                        <span className="text-gray-600">Roll Number</span>
+                                        <span className="font-medium text-gray-700 font-mono text-sm">{rollNumber}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                                        <span className="text-gray-600">Teacher</span>
+                                        <div className="text-right">
+                                            <div className="font-medium text-gray-900">{assignedTeacher?.name || 'N/A'}</div>
+                                            <div className="text-xs text-gray-400">{assignedTeacher?.email}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</h3>
+                                <div className={`p-4 rounded-lg flex items-start gap-3 ${parseFloat(percentage) >= 75 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                    {parseFloat(percentage) >= 75 ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
+                                    <div>
+                                        <p className="font-bold">{parseFloat(percentage) >= 75 ? "Eligible" : "At Risk"}</p>
+                                        <p className="text-sm mt-1 opacity-90">
+                                            {parseFloat(percentage) >= 75
+                                                ? "You are eligible for exams."
+                                                : "Your attendance is below 75%. Please attend more classes."}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </>
+            )}
 
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</h3>
-                        <div className={`p-4 rounded-lg flex items-start gap-3 ${parseFloat(percentage) >= 75 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                            {parseFloat(percentage) >= 75 ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
-                            <div>
-                                <p className="font-bold">{parseFloat(percentage) >= 75 ? "Eligible" : "At Risk"}</p>
-                                <p className="text-sm mt-1 opacity-90">
-                                    {parseFloat(percentage) >= 75
-                                        ? "You are eligible for exams."
-                                        : "Your attendance is below 75%. Please attend more classes."}
-                                </p>
-                            </div>
+            {/* VIEW: ATTENDANCE HISTORY */}
+            {view === 'history' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <h3 className="text-lg font-bold text-gray-800">Attendance History</h3>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            <button
+                                onClick={downloadReport}
+                                className="flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium text-sm w-full sm:w-auto"
+                            >
+                                <Download className="w-4 h-4" />
+                                Export Report
+                            </button>
+                            <select
+                                className="text-sm border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto"
+                                value={filterMonth}
+                                onChange={(e) => setFilterMonth(e.target.value)}
+                            >
+                                <option value="All">All Months</option>
+                                {monthlyData.map((m, i) => (
+                                    <option key={i} value={m.month}>{m.month}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Recent Activity / Filter Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <h3 className="text-lg font-bold text-gray-800">Attendance History</h3>
-                    <div className="flex gap-2">
-                        <select
-                            className="text-sm border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                            value={filterMonth}
-                            onChange={(e) => setFilterMonth(e.target.value)}
-                        >
-                            <option value="All">All Months</option>
-                            {monthlyData.map((m, i) => (
-                                <option key={i} value={m.month}>{m.month}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-500 font-medium">
-                            <tr>
-                                <th className="px-6 py-3">Date</th>
-                                <th className="px-6 py-3">Subject</th>
-                                <th className="px-6 py-3">Topic</th>
-                                <th className="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filteredHistory.length > 0 ? (
-                                filteredHistory.map((item, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50">
-                                        <td className="px-6 py-3 font-medium text-gray-900">
-                                            {new Date(item.date).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-3 text-gray-600">{item.subject}</td>
-                                        <td className="px-6 py-3 text-gray-500">{item.topic}</td>
-                                        <td className="px-6 py-3">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'Present' ? 'bg-green-100 text-green-800' :
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-500 font-medium">
+                                <tr>
+                                    <th className="px-6 py-3">Date</th>
+                                    <th className="px-6 py-3">Subject</th>
+                                    <th className="px-6 py-3">Topic</th>
+                                    <th className="px-6 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {filteredHistory.length > 0 ? (
+                                    filteredHistory.map((item, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50/50">
+                                            <td className="px-6 py-3 font-medium text-gray-900">
+                                                {new Date(item.date).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-3 text-gray-600">{item.subject}</td>
+                                            <td className="px-6 py-3 text-gray-500">{item.topic}</td>
+                                            <td className="px-6 py-3">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'Present' ? 'bg-green-100 text-green-800' :
                                                     item.status === 'Absent' ? 'bg-red-100 text-red-800' :
                                                         'bg-yellow-100 text-yellow-800'
-                                                }`}>
-                                                {item.status}
-                                            </span>
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-400">
+                                            No records found for this selection.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="px-6 py-8 text-center text-gray-400">
-                                        No records found for this selection.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* VIEW: CLASS VIEW */}
+            {view === 'classes' && (
+                <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h3 className="text-lg font-bold text-gray-800">Assigned Classes</h3>
+                    </div>
+
+                    {subjectData && subjectData.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {subjectData.map((subject, idx) => (
+                                <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 className="text-lg font-bold text-gray-800">{subject.subject}</h4>
+                                            <p className="text-sm text-gray-500 mt-1">Total Classes: {subject.totalClasses}</p>
+                                        </div>
+                                        <div className={`p-2 rounded-lg ${subject.attendance >= 75 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                            <BookOpen className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-auto pt-4 border-t border-gray-50 space-y-2">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500">Teacher:</span>
+                                            <span className="font-medium text-gray-800">{assignedTeacher?.name || 'Assigned Teacher'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500">Attendance:</span>
+                                            <span className={`font-medium ${subject.attendance >= 75 ? 'text-green-600' : 'text-red-500'}`}>{subject.attendance}%</span>
+                                        </div>
+                                    </div>
+                                    <div className={`absolute top-0 left-0 w-1 h-full ${subject.attendance >= 75 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-white border rounded-xl p-12 text-center text-gray-500">
+                            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-lg font-medium text-gray-700">No subjects assigned</p>
+                            <p className="text-sm mt-1">You currently have no subjects assigned to your profile.</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
         </DashboardLayout>
     );
