@@ -36,10 +36,24 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
+              <AdminDashboard defaultView="users" />
             </ProtectedRoute>
           } />
-
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard defaultView="users" />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/subjects" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard defaultView="subjects" />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard defaultView="settings" />
+            </ProtectedRoute>
+          } />
 
           {/* Teacher Dashboard */}
           <Route path="/teacher" element={

@@ -5,13 +5,17 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { Users, BookOpen, GraduationCap, Plus, Trash2, Search, Settings, Filter, X, AlertTriangle } from 'lucide-react';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ defaultView = 'users' }) => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // UI State
-    const [activeTab, setActiveTab] = useState('users'); // users | students | subjects
+    const [activeTab, setActiveTab] = useState(defaultView === 'dashboard' ? 'users' : defaultView); // users | students | subjects | settings
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        setActiveTab(defaultView === 'dashboard' ? 'users' : defaultView);
+    }, [defaultView]);
 
     // Enhanced UI State
     const [searchTerm, setSearchTerm] = useState('');
@@ -117,6 +121,28 @@ const AdminDashboard = () => {
         } catch (e) { showMessage(e.response?.data?.message || 'Error creating subject', true); }
     };
 
+    const handleDeleteSubject = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this subject? All associated attendance records will also be deleted.")) return;
+        try {
+            await api.delete(`/subjects/${id}`);
+            showMessage('Subject deleted successfully');
+            fetchSubjects();
+        } catch (e) {
+            showMessage(e.response?.data?.message || 'Error deleting subject', true);
+        }
+    };
+
+    const handleDeleteStudent = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this student profile?")) return;
+        try {
+            await api.delete(`/students/${id}`);
+            showMessage('Student profile deleted successfully');
+            fetchStudents();
+        } catch (e) {
+            showMessage(e.response?.data?.message || 'Error deleting student profile', true);
+        }
+    };
+
     const showMessage = (msg, isError = false) => {
         setMessage({ text: msg, type: isError ? 'error' : 'success' });
         setTimeout(() => setMessage(''), 3000);
@@ -155,6 +181,7 @@ const AdminDashboard = () => {
                 <TabButton id="users" label="User Accounts" icon={Users} />
                 <TabButton id="students" label="Student Profiles" icon={GraduationCap} />
                 <TabButton id="subjects" label="Subjects" icon={BookOpen} />
+                <TabButton id="settings" label="Settings" icon={Settings} />
             </div>
 
             <div className="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 p-6">
@@ -313,6 +340,7 @@ const AdminDashboard = () => {
                                             <th className="px-4 py-3">Details</th>
                                             <th className="px-4 py-3">Batch</th>
                                             <th className="px-4 py-3">Assigned Teacher</th>
+                                            <th className="px-4 py-3 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -330,6 +358,15 @@ const AdminDashboard = () => {
                                                         </span>
                                                     ) : <span className="text-xs text-gray-400">Unassigned</span>}
                                                 </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteStudent(s._id)}
+                                                        className="text-gray-400 hover:text-red-600 transition p-2 hover:bg-red-50 rounded-full"
+                                                        title="Delete Student Profile"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -342,9 +379,21 @@ const AdminDashboard = () => {
                                 <Plus className="w-4 h-4" /> Add Student Profile
                             </h3>
                             <form onSubmit={handleCreateStudent} className="space-y-3">
-                                <input type="text" placeholder="Full Name" className="w-full p-2 border rounded text-sm" value={newStudent.name} onChange={e => setNewStudent({ ...newStudent, name: e.target.value })} required />
+                                <select className="w-full p-2 border rounded text-sm" value={newStudent.email} onChange={e => {
+                                    const selectedUser = users.find(u => u.email === e.target.value);
+                                    if (selectedUser) {
+                                        setNewStudent({ ...newStudent, email: selectedUser.email, name: selectedUser.name });
+                                    } else {
+                                        setNewStudent({ ...newStudent, email: '', name: '' });
+                                    }
+                                }} required>
+                                    <option value="">-- Select Student Account --</option>
+                                    {users.filter(u => u.role === 'student' && !students.some(s => s.email === u.email)).map(u => 
+                                        <option key={u._id} value={u.email}>{u.name} ({u.email})</option>
+                                    )}
+                                </select>
+                                <input type="text" placeholder="Full Name" className="w-full p-2 border rounded text-sm bg-gray-100" value={newStudent.name} readOnly required title="Auto-filled from User Account"/>
                                 <input type="text" placeholder="Roll Number" className="w-full p-2 border rounded text-sm" value={newStudent.rollNumber} onChange={e => setNewStudent({ ...newStudent, rollNumber: e.target.value })} required />
-                                <input type="email" placeholder="Email (for Linking)" className="w-full p-2 border rounded text-sm" value={newStudent.email} onChange={e => setNewStudent({ ...newStudent, email: e.target.value })} required />
                                 <input type="text" placeholder="Batch (e.g. 2026)" className="w-full p-2 border rounded text-sm" value={newStudent.batch} onChange={e => setNewStudent({ ...newStudent, batch: e.target.value })} required />
                                 <select className="w-full p-2 border rounded text-sm" value={newStudent.assignedTeacher} onChange={e => setNewStudent({ ...newStudent, assignedTeacher: e.target.value })} required>
                                     <option value="">-- Assign Teacher --</option>
@@ -371,8 +420,18 @@ const AdminDashboard = () => {
                                                 <h4 className="font-bold text-gray-800">{sub.name}</h4>
                                                 <p className="text-xs text-gray-500 font-mono mt-1">{sub.code}</p>
                                             </div>
-                                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                                <BookOpen className="w-4 h-4" />
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                                    <BookOpen className="w-4 h-4" />
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleDeleteSubject(sub._id)}
+                                                    className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                                                    title="Delete Subject"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
                                         <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
@@ -399,6 +458,32 @@ const AdminDashboard = () => {
                                     Add Subject
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- SETTINGS TAB --- */}
+                {activeTab === 'settings' && (
+                    <div className="bg-white rounded-xl border border-gray-100 p-8 text-center max-w-2xl mx-auto">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Settings className="w-8 h-8 text-gray-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">System Settings</h3>
+                        <p className="text-gray-500 mb-6">
+                            Configure global application preferences and security settings.
+                        </p>
+                        <div className="flex flex-col gap-4 text-left">
+                            <div className="p-4 border rounded-lg bg-gray-50">
+                                <h4 className="font-semibold text-gray-800">Account Details</h4>
+                                <p className="text-sm text-gray-600 mt-1">Logged in as {user?.email}</p>
+                            </div>
+                            <div className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800">Security</h4>
+                                    <p className="text-sm text-gray-600 mt-1">Manage your password.</p>
+                                </div>
+                                <button className="px-4 py-2 bg-white border rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Update</button>
+                            </div>
                         </div>
                     </div>
                 )}

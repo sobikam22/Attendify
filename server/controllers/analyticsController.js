@@ -10,7 +10,13 @@ const getClassAnalytics = async (req, res) => {
         const allAttendance = await Attendance.find().populate('records.student');
 
         if (!allAttendance.length) {
-            return res.status(200).json({ globalPercentage: 0, atRiskStudents: [] });
+            return res.status(200).json({ 
+                totalClasses: 0,
+                totalStudents: 0,
+                globalPercentage: 0, 
+                atRiskStudents: [],
+                fullReport: [] 
+            });
         }
 
         // 2. Initialize counters for each student
@@ -20,13 +26,14 @@ const getClassAnalytics = async (req, res) => {
 
         allAttendance.forEach(day => {
             day.records.forEach(record => {
+                if (!record.student) return; // Safeguard if student profile was deleted
                 const studentId = record.student._id.toString();
 
                 if (!studentStats[studentId]) {
                     studentStats[studentId] = {
                         id: studentId,
-                        name: record.student.name,
-                        rollNumber: record.student.rollNumber,
+                        name: record.student.name || 'Unknown',
+                        rollNumber: record.student.rollNumber || 'Unknown',
                         totalClasses: 0,
                         presentClasses: 0
                     };
@@ -145,7 +152,7 @@ const getSubjectAnalytics = async (req, res) => {
         allAttendance.forEach(record => {
             if (!record.subject) return; // Skip if subject deleted
 
-            const subjectName = record.subject.name;
+            const subjectName = record.subject.name || 'Unknown Subject';
 
             if (!subjectStats[subjectName]) {
                 subjectStats[subjectName] = {

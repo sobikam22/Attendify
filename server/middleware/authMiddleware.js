@@ -11,10 +11,7 @@ const verifyToken = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
 
-            // TEMPORARY: Skip signature verification
-            // const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
-            console.log('[DEV MODE] Skipping token signature verification');
-            const decoded = jwt.decode(token); // Just decode, don't verify
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
 
             if (decoded && decoded.id) {
                 req.user = await User.findById(decoded.id).select('-password');

@@ -1,4 +1,7 @@
 const User = require('../models/User');
+const Subject = require('../models/Subject');
+const Attendance = require('../models/Attendance');
+const Student = require('../models/Student');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT Token
@@ -60,20 +63,23 @@ const authUser = async (req, res) => {
 
     try {
         console.log(`[LOGIN ATTEMPT] Email: ${email}`);
-        console.log('[DEV MODE] Bypassing password verification');
 
         // Find user by email (or username if you were using that, keeping email for now)
         const user = await User.findOne({ email });
 
         if (!user) {
             console.log('[LOGIN FAILED] User not found');
-            return res.status(401).json({ message: 'Invalid email' }); // simplified message
+            return res.status(401).json({ message: 'Invalid email or password' }); 
         }
 
-        // TEMPORARY: Skip password check
-        // const isMatch = await user.matchPassword(password); 
+        const isMatch = await user.matchPassword(password); 
+        
+        if (!isMatch) {
+            console.log('[LOGIN FAILED] Invalid password');
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
 
-        console.log(`[LOGIN SUCCESS] User found: ${user.name} (${user.role}) - DEV BYPASS`);
+        console.log(`[LOGIN SUCCESS] User found: ${user.name} (${user.role})`);
 
         res.json({
             _id: user._id,
@@ -142,12 +148,49 @@ const deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
-        if (user) {
-            await user.deleteOne();
-            res.json({ message: 'User removed' });
-        } else {
-            res.status(404).json({ message: 'User not found' });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
+
+        // Cascading deletes
+        if (user.role === 'teacher') {
+            // Find subjects taught by teacher
+            const subjects = await Subject.find({ teacher: user._id });
+            const subjectIds = subjects.map(s => s._id);
+
+            // Delete attendance for these subjects
+            await Attendance.deleteMany({ subject: { $in: subjectIds } });
+            
+            // Delete the subjects
+            await Subject.deleteMany({ teacher: user._id });
+
+            // Find students assigned to this teacher
+            const students = await Student.find({ assignedTeacher: user._id });
+            const studentIds = students.map(s => s._id);
+
+            // Pull these students from any remaining attendance records
+            await Attendance.updateMany(
+                {}, 
+                { $pull: { records: { student: { $in: studentIds } } } }
+            );
+
+            // Delete these student profiles
+            await Student.deleteMany({ assignedTeacher: user._id });
+        } else if (user.role === 'student') {
+            // Delete their student profile
+            const studentProfile = await Student.findOne({ email: user.email });
+            if (studentProfile) {
+                await Attendance.updateMany(
+                    {}, 
+                    { $pull: { records: { student: studentProfile._id } } }
+                );
+                await studentProfile.deleteOne();
+            }
+        }
+
+        await user.deleteOne();
+        res.json({ message: 'User and all related records removed' });
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

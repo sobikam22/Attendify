@@ -56,12 +56,6 @@ const Login = () => {
                     >
                         Login
                     </button>
-                    <div className="text-xs text-gray-400 mt-4 text-center">
-                        Demo: admin@example.com / any password (Bypassed)
-                    </div>
-                    <div className="text-xs text-red-500 mt-2 text-center font-bold">
-                        ⚠ DEV MODE: Auth Bypassed
-                    </div>
                 </form>
             </div>
         </div>

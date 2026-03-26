@@ -10,10 +10,11 @@ const Subject = require('../models/Subject');
 // @access  Private (Teacher/Admin)
 const markAttendance = async (req, res) => {
     try {
-        const { date, subject, records } = req.body; // records can be array or single object in array
+        const { date, subject, subjectId, records } = req.body; 
+        const targetSubject = subject || subjectId;
 
-        if (!subject || !records || records.length === 0) {
-            return res.status(400).json({ message: 'Subject and records are available' });
+        if (!targetSubject || !records || records.length === 0) {
+            return res.status(400).json({ message: 'Subject and records are required.' });
         }
 
         // Normalize date to YYYY-MM-DD to ensure daily uniqueness
@@ -37,7 +38,7 @@ const markAttendance = async (req, res) => {
 
         // Check if an attendance document already exists for this Subject + Date
         let attendance = await Attendance.findOne({
-            subject,
+            subject: targetSubject,
             date: { $gte: attendanceDate, $lt: nextDay }
         });
 
@@ -66,7 +67,7 @@ const markAttendance = async (req, res) => {
             // Create new document
             attendance = new Attendance({
                 date: attendanceDate,
-                subject,
+                subject: targetSubject,
                 records
             });
             await attendance.save();

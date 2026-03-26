@@ -10,6 +10,10 @@ dotenv.config();
 // Connect to Database
 connectDB();
 
+// Seed Default Admin
+const seedAdmin = require('./utils/seedAdmin');
+seedAdmin();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -23,6 +27,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const userRoutes = require('./routes/userRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/analytics', analyticsRoutes);
@@ -30,6 +35,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', userRoutes); // Alias for requirement compliance
 app.use('/api/students', studentRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

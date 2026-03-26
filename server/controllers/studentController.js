@@ -32,20 +32,14 @@ const createStudent = async (req, res) => {
             return res.status(400).json({ message: 'Student with this Roll Number already exists' });
         }
 
-        // 1. Check or Create User Account
+        // 1. Check User Account
         let user = await User.findOne({ email });
 
         if (!user) {
-            console.log(`[Create Student] Creating new User account for ${email}`);
-            user = await User.create({
-                name,
-                email,
-                password: 'password123', // Default password
-                role: 'student'
-            });
-        } else {
-            console.log(`[Create Student] Linking to existing User account: ${user._id}`);
+            return res.status(404).json({ message: 'User account with this email not found. Please create the User account first.' });
         }
+        
+        console.log(`[Create Student] Linking to existing User account: ${user._id}`);
 
         // 2. Create Student Profile linked to User
         const student = await Student.create({
@@ -97,8 +91,15 @@ const deleteStudent = async (req, res) => {
         const student = await Student.findById(req.params.id);
 
         if (student) {
+            const Attendance = require('../models/Attendance');
+            // Pull the student from any attendance records they were in to avoid orphaned pointers
+            await Attendance.updateMany(
+                {}, 
+                { $pull: { records: { student: student._id } } }
+            );
+
             await student.deleteOne();
-            res.json({ message: 'Student removed' });
+            res.json({ message: 'Student removed cleanly' });
         } else {
             res.status(404).json({ message: 'Student not found' });
         }

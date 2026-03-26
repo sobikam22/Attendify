@@ -1,4 +1,5 @@
 const Subject = require('../models/Subject');
+const Attendance = require('../models/Attendance');
 
 // @desc    Get all subjects (Admin: All, Teacher: Assigned)
 // @route   GET /api/subjects
@@ -37,4 +38,26 @@ const createSubject = async (req, res) => {
     }
 };
 
-module.exports = { getSubjects, createSubject };
+// @desc    Delete a subject
+// @route   DELETE /api/subjects/:id
+// @access  Private (Admin)
+const deleteSubject = async (req, res) => {
+    try {
+        const subject = await Subject.findById(req.params.id);
+
+        if (!subject) {
+            return res.status(404).json({ message: 'Subject not found' });
+        }
+
+        // Delete subject and its related attendance records
+        await Attendance.deleteMany({ subject: subject._id });
+        await subject.deleteOne();
+
+        res.json({ message: 'Subject and related attendance records removed' });
+    } catch (error) {
+        console.error('[Delete Subject Error]', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getSubjects, createSubject, deleteSubject };

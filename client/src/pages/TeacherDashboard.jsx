@@ -5,6 +5,7 @@ import api from '../api/axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import DashboardLayout from '../components/DashboardLayout';
 import { Users, BookOpen, Calendar, CheckSquare, PlusCircle, AlertCircle } from 'lucide-react';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const TeacherDashboard = ({ defaultView = 'dashboard' }) => {
     const { user, logout } = useContext(AuthContext);
@@ -148,6 +149,7 @@ const TeacherDashboard = ({ defaultView = 'dashboard' }) => {
             {/* VIEW: DASHBOARD (Overview) */}
             {view === 'dashboard' && stats && (
                 <>
+                    {!isStudent && <AIInsightsCard stats={stats} students={students} />}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <div className="flex items-center gap-3 mb-2">
@@ -447,8 +449,8 @@ const TeacherDashboard = ({ defaultView = 'dashboard' }) => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${s.status === 'Good'
-                                                            ? 'bg-green-100 text-green-700 border border-green-200'
-                                                            : 'bg-red-100 text-red-700 border border-red-200'
+                                                        ? 'bg-green-100 text-green-700 border border-green-200'
+                                                        : 'bg-red-100 text-red-700 border border-red-200'
                                                         }`}>
                                                         {s.status}
                                                     </span>
