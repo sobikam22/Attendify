@@ -75,12 +75,14 @@ const StudentDashboard = ({ defaultView = 'dashboard' }) => {
     const downloadReport = () => {
         if (!processedData?.filteredHistory?.length) return alert("No data to download");
 
-        const headers = ['Date', 'Subject', 'Status', 'Topic'];
+        const headers = ['Date', 'Subject', 'Attendance Status', 'Topic', 'Overall Percent in Subject'];
         const csvContent = [
             headers.join(','),
-            ...processedData.filteredHistory.map(row =>
-                `${new Date(row.date).toLocaleDateString()},${row.subject},${row.status},${row.topic}`
-            )
+            ...processedData.filteredHistory.map(row => {
+                const subjectInfo = processedData.subjectData?.find(s => s.subject === row.subject);
+                const overallPercent = subjectInfo ? `${subjectInfo.attendance}%` : 'N/A';
+                return `${new Date(row.date).toLocaleDateString()},${row.subject},${row.status},${row.topic || ''},${overallPercent}`;
+            })
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
