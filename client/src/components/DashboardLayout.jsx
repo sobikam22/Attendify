@@ -6,11 +6,11 @@ const DashboardLayout = ({ children }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 flex font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/70 flex font-sans relative overflow-hidden">
             {/* Soft Ambient Cool Light Background Orbs */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-3xl opacity-60 mix-blend-multiply"></div>
-                <div className="absolute top-40 -left-20 w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-3xl opacity-60 mix-blend-multiply"></div>
+                <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-blue-50/60 rounded-full blur-3xl opacity-60 mix-blend-multiply"></div>
+                <div className="absolute top-20 -left-20 w-[500px] h-[500px] bg-indigo-50/60 rounded-full blur-3xl opacity-60 mix-blend-multiply"></div>
             </div>
 
             {/* Desktop Sidebar */}
